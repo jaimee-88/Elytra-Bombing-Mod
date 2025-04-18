@@ -27,16 +27,17 @@ public class ItemMixin {
 	@Inject(at = @At("TAIL"), method = "use", cancellable = true)
 	public void use(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
 		ItemStack itemStack = user.getStackInHand(hand);
-		if (user.isGliding()) {
+		if (user.isGliding() || user.hasVehicle()) {
 			Hand other_hand = (hand == Hand.MAIN_HAND) ? Hand.OFF_HAND : Hand.MAIN_HAND;
 			ItemStack usedItemStack = user.getStackInHand(hand), otherItemStack = user.getStackInHand(other_hand);
-			Vec3d position = user.getPos(), velocity = user.getVelocity();
+			Vec3d position = user.hasVehicle() ? user.getVehicle().getPos() : user.getPos(); // Use the vehicle's position if riding
+			Vec3d velocity = user.getVelocity();
 			if (ElytraBombingMod.SHOULD_LOG && !world.isClient) {
 				ElytraBombingMod.log(hand, other_hand, usedItemStack, otherItemStack, position, velocity);
 			}
 			if (usedItemStack.isOf(Items.FLINT_AND_STEEL) && otherItemStack.isOf(Items.TNT)) {
 				TntEntity tntEntity = new TntEntity(world, position.x, position.y, position.z, user);
-				tntEntity.setVelocity(velocity.multiply(1.2));
+				tntEntity.setVelocity(0, -1.0, 0);
 				world.spawnEntity(tntEntity);
 				world.playSound(null, tntEntity.getX(), tntEntity.getY(), tntEntity.getZ(), 
 					SoundEvents.ENTITY_TNT_PRIMED, SoundCategory.BLOCKS, 1.0f, 1.0f);
@@ -51,7 +52,7 @@ public class ItemMixin {
 				FallingBlockEntity anvilEntity = new FallingBlockEntity(EntityType.FALLING_BLOCK, world);
 				anvilEntity.timeFalling = 1;
 				anvilEntity.setPosition(position);
-				anvilEntity.setVelocity(velocity.multiply(1.2));
+				anvilEntity.setVelocity(0, -1.0, 0);
 				anvilEntity.setHurtEntities(1.0F, 40); 
 				if (usedItemStack.isOf(Items.ANVIL)) 		 ((ElytraBombingMod.FBEInterface) anvilEntity).setBlock(Blocks.ANVIL.getDefaultState());
 				if (usedItemStack.isOf(Items.CHIPPED_ANVIL)) ((ElytraBombingMod.FBEInterface) anvilEntity).setBlock(Blocks.CHIPPED_ANVIL.getDefaultState());
